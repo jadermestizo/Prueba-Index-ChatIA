@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat IA</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background-color: #343541;
+      color: white;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .chat-container {
+      width: 100%;
+      max-width: 900px;
+      height: 95vh;
+      background-color: #444654;
+      display: flex;
+      flex-direction: column;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    .header {
+      background-color: #202123;
+      padding: 18px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      border-bottom: 1px solid #555;
+    }
+
+    .chat-box {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message {
+      max-width: 80%;
+      padding: 14px 18px;
+      border-radius: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .user {
+      align-self: flex-end;
+      background-color: #19c37d;
+      color: black;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background-color: #2d2f3a;
+      border: 1px solid #555;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 16px;
+      background-color: #40414f;
+      border-top: 1px solid #555;
+      gap: 10px;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      background-color: #2d2f3a;
+      color: white;
+      font-size: 15px;
+    }
+
+    .input-area button {
+      padding: 14px 22px;
+      border: none;
+      border-radius: 10px;
+      background-color: #19c37d;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .input-area button:hover {
+      opacity: 0.9;
+    }
+
+    .typing {
+      font-style: italic;
+      opacity: 0.7;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #666;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="chat-container">
+    <div class="header">Chat IA - OpenRouter</div>
+
+    <div class="chat-box" id="chatBox">
+      <div class="message bot">
+        Hola 👋 ¿En qué puedo ayudarte?
+      </div>
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Escribe un mensaje..." />
+      <button onclick="sendMessage()">Enviar</button>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://127.0.0.1:8000/ai-chat";
+
+    const chatBox = document.getElementById("chatBox");
+    const userInput = document.getElementById("userInput");
+
+    userInput.addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        sendMessage();
+      }
+    });
+
+    function addMessage(text, sender) {
+      const messageDiv = document.createElement("div");
+      messageDiv.classList.add("message", sender);
+      messageDiv.textContent = text;
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const message = userInput.value.trim();
+
+      if (!message) return;
+
+      addMessage(message, "user");
+      userInput.value = "";
+
+      const typingDiv = document.createElement("div");
+      typingDiv.classList.add("message", "bot", "typing");
+      typingDiv.textContent = "Escribiendo...";
+      chatBox.appendChild(typingDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: message
+          })
+        });
+
+        const data = await response.json();
+
+        typingDiv.remove();
+
+        addMessage(data.response || data || "No hubo respuesta del servidor", "bot");
+
+      } catch (error) {
+        typingDiv.remove();
+        addMessage("Error conectando con el servidor", "bot");
+        console.error(error);
+      }
+    }
+  </script>
+
+</body>
+</html>
